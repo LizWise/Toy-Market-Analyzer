@@ -29,9 +29,11 @@ def get_token():
         }
 
     response = requests.post(token_url, headers=headers, data=data)
-    token_data = response.json()
+    token_data = response.json() 
+    print("Your status code: ", response.status_code)
 
     access_token = token_data["access_token"]
+   
     return access_token
 
 x = get_token()
@@ -40,19 +42,30 @@ def get_items():
     uri = "https://api.sandbox.ebay.com/buy/browse/v1/item_summary/search"
 
     headers = {
-        "Authorization": f"Bearer {x}"
+        "Authorization": f"Bearer {x}",
+        "Accept": "application/json"
     }
 
     params = {
-        "q" : "apples",
-        "limit" : 3,     
-    }
+        "q" : "pokemon",
+        "limit" : 1,
+        }
 
     response = requests.get(uri, headers=headers, params=params)
-    return response.text
+    items = response.json()
+    return items
 
-y = get_items()
-print(f"Here are some apples: {y}")
+package = get_items()
+item = package["itemSummaries"]
+
+list = " "
+
+for title in item:
+    list += title["title"]
+
+
+print(title)
+
 
 
 
