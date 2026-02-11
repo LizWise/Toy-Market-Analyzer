@@ -3,9 +3,15 @@ import base64
 import requests
 import json
 import glob
+import sqlite3
+from datetime import date, datetime, timedelta, timezone
 from dotenv import load_dotenv
 
+### Retrieve Client Credentials from Hidden .env ###
+
 load_dotenv("production.env")
+
+### Get Access Token from Authorization Server ###
 
 def get_token():
 
@@ -39,6 +45,9 @@ def get_token():
 
 x = get_token()
 
+### Import Image Data from Image Directory ###
+### Files Must be JPG, Names Should Reflect Name of Product ###
+
 b64image_list = []
 
 for images in glob.glob("./images/*.jpg"):
@@ -48,6 +57,13 @@ for images in glob.glob("./images/*.jpg"):
     b64_image = base64.b64encode(data).decode("utf-8")
     b64image_list.append(b64_image)
 
+### Create Time Variables for Time Filter Parameter ###
+et = datetime.now(timezone.utc)
+st = et - timedelta(days = 2)
+end = et.strftime('%Y-%m-%dT%H:%M:%SZ')
+start = st.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+### POST to Resource Server Function (Calls API) ###
 
 def get_items(image):
     uri = "https://api.ebay.com/buy/browse/v1/item_summary/search_by_image"
@@ -62,21 +78,27 @@ def get_items(image):
     }
 
     params = {
-       "limit" : 1
+       #"limit" : 1,
+       "filter" : f"itemCreationDate:[{start}..{end}]"
     }
 
     response = requests.post(uri, headers=headers, json=data, params=params)
     items = response.json()
     return items
 
+### Loops through Encoded Image List with POST Function and Adds Retrieved JSON to Listing Array ###
+
 listings = []
 
-for i in b64image_list:
-    package = get_items(i)
+for image in b64image_list:
+    package = get_items(image)
     name = package["itemSummaries"]
     listings.append(name)
 
-print(listings)
+### Print Results ### 
+
+print(json.dumps(listings, indent=4))
+print(len(listings))
 
 # package = get_items()
 # print(package["categories"])
